@@ -6,7 +6,7 @@
   <meta name="description" content="Kenya commercial sales dashboard with forecasts, customer intelligence, product evidence and anomaly monitoring.">
   <title>Sales Intelligence</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317324D'/%3E%3Cpath d='M15 46V34h8v12zm13 0V25h8v21zm13 0V15h8v31z' fill='%232F75B5'/%3E%3Cpath d='M12 49h40' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260928-product-forecast">
+  <link rel="stylesheet" href="styles.css?v=20260928-explanations">
 </head>
 <body>
   <header class="site-header">
@@ -87,7 +87,7 @@
           <div class="panel-head filter-head"><div><p class="section-label">Action queue</p><div class="title-with-info"><h3>Accounts ranked by revenue at risk</h3><span class="info-wrap"><button class="info-button" type="button" aria-label="Explain revenue at risk">i</button><span class="info-tooltip wide-tooltip" role="tooltip"><strong>Revenue at risk = net sales in the previous 180 days × (1 − predicted 60-day reorder probability).</strong> It ranks customers that combine meaningful recent sales with a lower modelled chance of ordering again soon. Example: KES 10M of six-month sales and a 30% reorder probability produces KES 7M of model-weighted revenue at risk. This is a prioritization score—not an unpaid balance, expected accounting loss, credit-default probability, bad-debt estimate, or prediction that all displayed revenue will disappear.</span></span></div></div><div class="inline-filters"><input id="customer-search" type="search" placeholder="Search customer" oninput="renderCustomerRows()"><select id="risk-filter" onchange="renderCustomerRows()"><option value="All">All risks</option><option value="High">High</option><option value="Watch">Watch</option><option value="Low">Low</option></select></div></div>
           <div class="table-wrap customer-table-wrap"><table class="clickable-table"><thead><tr><th>Customer</th><th>Risk</th><th class="numeric">60-day probability</th><th class="numeric">Revenue at risk</th><th class="numeric">Last order</th></tr></thead><tbody id="customer-risk-rows"></tbody></table></div>
         </article>
-        <aside class="panel detail-panel"><div class="panel-head"><div><p class="section-label">Selected account</p><h3 id="customer-detail-name">Choose a customer</h3></div></div><div id="customer-detail" class="detail-body"></div></aside>
+        <aside class="panel detail-panel"><div class="panel-head"><div><p class="section-label">Selected account</p><div class="title-with-info"><h3 id="customer-detail-name">Choose a customer</h3><span class="info-wrap"><button class="info-button" type="button" aria-label="Explain the selected customer details">i</button><span class="info-tooltip wide-tooltip" role="tooltip">Shows the selected customer's predicted 60-day reorder probability, risk tier, days since the latest positive order, recent net sales, document activity and product breadth. These are purchasing-behavior measures, not payment history, clinical information or a credit score. CASH SALE and similar pooled accounts should not be interpreted as one individual customer.</span></span></div></div></div><div id="customer-detail" class="detail-body"></div></aside>
       </div>
     </section>
 
@@ -156,7 +156,7 @@
   </main>
 
   <footer><span>Public dashboard · Customer-level model output included</span><span id="generated-at"></span></footer>
-  <script src="intelligence-data.js?v=20260928-product-forecast"></script>
-  <script src="app.js?v=20260928-product-forecast"></script>
+  <script src="intelligence-data.js?v=20260928-explanations"></script>
+  <script src="app.js?v=20260928-explanations"></script>
 </body>
 </html>
