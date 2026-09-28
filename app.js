@@ -1,118 +1,49 @@
-const COLORS = { 2024: '#1f6b96', 2025: '#e87522', 2026: '#1f7a37' };
-const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
-const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
-const pct = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 });
+const COLORS={2024:'#1f6b96',2025:'#e87522',2026:'#2e7d32'};
+const fmt=new Intl.NumberFormat('en-KE',{maximumFractionDigits:0});
+const compact=new Intl.NumberFormat('en-KE',{notation:'compact',maximumFractionDigits:1});
+const pct=new Intl.NumberFormat('en-KE',{style:'percent',maximumFractionDigits:1});
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money=value=>`KES ${compact.format(value||0)}`;
+let base,intel,selectedCustomer=null,currentTab='overview';
 
-let model;
+function comparableGrowth(year){const current=base.monthly.filter(r=>r.year===year);const last=Math.max(...current.map(r=>r.month));const prior=base.monthly.filter(r=>r.year===year-1&&r.month<=last);if(!prior.length)return null;return current.reduce((s,r)=>s+r.net_sales,0)/prior.reduce((s,r)=>s+r.net_sales,0)-1}
+function svgEl(name,attrs={}){const el=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));return el}
+function pathFor(points,x,y){return points.map((p,i)=>`${i?'L':'M'}${x(p)},${y(p)}`).join(' ')}
+function addText(svg,text,attrs){const el=svgEl('text',attrs);el.textContent=text;svg.appendChild(el)}
 
-const $ = id => document.getElementById(id);
-const formatDate = iso => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
-
-function comparableGrowth(year) {
-  const current = model.monthly.filter(r => r.year === year);
-  const lastMonth = Math.max(...current.map(r => r.month));
-  const prior = model.monthly.filter(r => r.year === year - 1 && r.month <= lastMonth);
-  if (prior.length !== lastMonth) return null;
-  const currentNet = current.reduce((s, r) => s + r.net_sales, 0);
-  const priorNet = prior.reduce((s, r) => s + r.net_sales, 0);
-  return currentNet / priorNet - 1;
+function renderOverview(year){
+  const total=base.year_totals[String(year)],growth=comparableGrowth(year);
+  $('net-sales').textContent=compact.format(total.net_sales);$('yoy').textContent=growth===null?'n/a':pct.format(growth);$('yoy-note').textContent=growth===null?'Prior-year coverage incomplete':'Same months vs prior year';$('documents').textContent=fmt.format(total.invoices);$('active-customers').textContent=fmt.format(total.active_customers);$('average').textContent=fmt.format(total.net_sales/total.invoices);$('discount').textContent=pct.format(total.discount_rate);$('group-year').textContent=year;
+  renderOverviewTrend();renderBars('group-bars',base.rankings.item_group[String(year)].slice(0,10).map(r=>({label:r.name,value:r.net_sales})),false);
+  const table=(id,rows)=>{$(id).innerHTML=rows.slice(0,10).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name)}</td><td class="numeric">${fmt.format(r.net_sales)}</td><td class="numeric">${pct.format(r.net_sales/total.net_sales)}</td></tr>`).join('')};
+  table('top-customers',base.rankings.customer[String(year)]);table('top-products',base.rankings.product[String(year)]);
 }
 
-function renderKpis(year) {
-  const total = model.year_totals[String(year)];
-  const source = model.sources.find(s => s.role_year === year && s.coverage_end.endsWith(year === 2026 ? '08-31' : '12-31')) || model.sources.find(s => s.role_year === year);
-  const growth = comparableGrowth(year);
-  $('net-sales').textContent = compact.format(total.net_sales);
-  $('yoy').textContent = growth === null ? 'n/a' : pct.format(growth);
-  $('yoy-note').textContent = growth === null ? 'Prior-year coverage incomplete' : 'Same months vs prior year';
-  $('documents').textContent = fmt.format(total.invoices);
-  $('customers').textContent = fmt.format(total.active_customers);
-  $('average').textContent = fmt.format(total.net_sales / total.invoices);
-  $('discount').textContent = pct.format(total.discount_rate);
-  $('coverage').textContent = `Coverage through ${formatDate(source.coverage_end)}`;
-  $('group-year').textContent = `${year}`;
-}
+function renderOverviewTrend(){const holder=$('trend-chart');holder.innerHTML='';const w=Math.max(holder.clientWidth,620),h=Math.max(holder.clientHeight,300),m={top:18,right:22,bottom:42,left:72},pw=w-m.left-m.right,ph=h-m.top-m.bottom,max=Math.max(...base.monthly.map(r=>r.net_sales))*1.12,svg=svgEl('svg',{viewBox:`0 0 ${w} ${h}`,role:'img','aria-label':'Monthly net sales trend by year'}),x=month=>m.left+((month-1)/11)*pw,y=value=>m.top+ph-(value/max)*ph;for(let i=0;i<=4;i++){const v=max*i/4,yy=y(v);svg.appendChild(svgEl('line',{x1:m.left,x2:w-m.right,y1:yy,y2:yy,class:'gridline'}));addText(svg,compact.format(v),{x:m.left-10,y:yy+4,'text-anchor':'end',class:'axis-label'})}base.month_names.forEach((name,i)=>addText(svg,name,{x:x(i+1),y:h-13,'text-anchor':'middle',class:'axis-label'}));[2024,2025,2026].forEach(year=>{const rows=base.monthly.filter(r=>r.year===year).sort((a,b)=>a.month-b.month);svg.appendChild(svgEl('path',{d:pathFor(rows,r=>x(r.month),r=>y(r.net_sales)),class:'trend-line',stroke:COLORS[year]}));rows.forEach(r=>svg.appendChild(svgEl('circle',{cx:x(r.month),cy:y(r.net_sales),r:4,class:'point',fill:COLORS[year]})))});holder.appendChild(svg);$('overview-legend').innerHTML=[2024,2025,2026].map(y=>`<span><i style="background:${COLORS[y]}"></i>${y}</span>`).join('')}
 
-function svgEl(name, attrs = {}) {
-  const el = document.createElementNS('http://www.w3.org/2000/svg', name);
-  Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-  return el;
-}
+function renderBars(id,rows,signed=false){const holder=$(id),max=Math.max(...rows.map(r=>Math.abs(r.value)),1);holder.innerHTML=rows.map(r=>`<div class="bar-row"><span class="bar-label" title="${esc(r.label)}">${esc(r.label)}</span><div class="bar-track"><div class="bar-fill ${signed&&r.value<0?'negative':''}" style="width:${Math.max(1,Math.abs(r.value)/max*100)}%"></div></div><span class="bar-value">${signed?(r.value>=0?'+':'')+compact.format(r.value):compact.format(r.value)}</span></div>`).join('')}
 
-function renderTrend() {
-  const holder = $('trend-chart');
-  holder.innerHTML = '';
-  const width = Math.max(holder.clientWidth, 620), height = Math.max(holder.clientHeight, 300);
-  const margin = { top: 18, right: 22, bottom: 42, left: 70 };
-  const plotW = width - margin.left - margin.right, plotH = height - margin.top - margin.bottom;
-  const max = Math.max(...model.monthly.map(r => r.net_sales)) * 1.12;
-  const svg = svgEl('svg', { viewBox: `0 0 ${width} ${height}`, 'aria-hidden': 'true' });
-  const x = month => margin.left + ((month - 1) / 11) * plotW;
-  const y = value => margin.top + plotH - (value / max) * plotH;
+function renderForecast(){const f=intel.forecast;$('forecast-3m').textContent=money(f.next_3_months);$('forecast-12m').textContent=money(f.next_12_months);$('forecast-mape').textContent=pct.format(f.backtest_mape);$('forecast-method').textContent=f.selected_method;$('model-comparison').innerHTML=f.candidate_models.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.method)}${i===0?' <span class="badge">selected</span>':''}</td><td class="numeric">${pct.format(r.mape)}</td></tr>`).join('');$('product-forecast').innerHTML=intel.product_forecasts.slice(0,12).map(r=>`<tr><td>${esc(r.product)}</td><td class="numeric">${compact.format(r.sales_2026_ytd)}</td><td class="numeric">${compact.format(r.forecast_sep_nov)}</td></tr>`).join('');renderForecastChart()}
 
-  for (let i = 0; i <= 4; i++) {
-    const value = (max / 4) * i;
-    const yy = y(value);
-    svg.appendChild(svgEl('line', { x1: margin.left, x2: width - margin.right, y1: yy, y2: yy, class: 'gridline' }));
-    const label = svgEl('text', { x: margin.left - 10, y: yy + 4, 'text-anchor': 'end', class: 'axis-label' });
-    label.textContent = compact.format(value);
-    svg.appendChild(label);
-  }
-  model.month_names.forEach((m, i) => {
-    const label = svgEl('text', { x: x(i + 1), y: height - 13, 'text-anchor': 'middle', class: 'axis-label' });
-    label.textContent = m;
-    svg.appendChild(label);
-  });
-  [2024, 2025, 2026].forEach(year => {
-    const rows = model.monthly.filter(r => r.year === year).sort((a,b) => a.month-b.month);
-    if (!rows.length) return;
-    let d = '';
-    rows.forEach((r, i) => { d += `${i === 0 ? 'M' : 'L'}${x(r.month)},${y(r.net_sales)} `; });
-    svg.appendChild(svgEl('path', { d, class: 'trend-line', stroke: COLORS[year] }));
-    rows.forEach(r => svg.appendChild(svgEl('circle', { cx: x(r.month), cy: y(r.net_sales), r: 4, class: 'point', fill: COLORS[year] })));
-  });
-  holder.appendChild(svg);
-  $('legend').innerHTML = [2024, 2025, 2026].map(y => `<span><i style="background:${COLORS[y]}"></i>${y}</span>`).join('');
-}
+function renderForecastChart(){const holder=$('forecast-chart');holder.innerHTML='';const hist=intel.forecast.history.map(r=>({...r,date:new Date(`${r.month}-01T00:00:00Z`)})),fc=intel.forecast.forecast.map(r=>({...r,date:new Date(`${r.month}-01T00:00:00Z`)})),all=[...hist.map(r=>r.net_sales),...fc.map(r=>r.upper)],w=Math.max(holder.clientWidth,680),h=Math.max(holder.clientHeight,340),m={top:20,right:24,bottom:48,left:78},pw=w-m.left-m.right,ph=h-m.top-m.bottom,max=Math.max(...all)*1.07,minDate=hist[0].date,maxDate=fc.at(-1).date,span=maxDate-minDate,x=d=>m.left+((d-minDate)/span)*pw,y=v=>m.top+ph-v/max*ph,svg=svgEl('svg',{viewBox:`0 0 ${w} ${h}`,role:'img','aria-label':'Actual and forecast monthly sales with uncertainty range'});for(let i=0;i<=5;i++){const v=max*i/5,yy=y(v);svg.appendChild(svgEl('line',{x1:m.left,x2:w-m.right,y1:yy,y2:yy,class:'gridline'}));addText(svg,compact.format(v),{x:m.left-10,y:yy+4,'text-anchor':'end',class:'axis-label'})}const tickDates=[hist[0].date,hist[8].date,hist[17].date,hist.at(-1).date,fc[5].date,fc.at(-1).date];tickDates.forEach(d=>addText(svg,d.toLocaleDateString('en-GB',{month:'short',year:'2-digit',timeZone:'UTC'}),{x:x(d),y:h-15,'text-anchor':'middle',class:'axis-label'}));const upper=fc.map(r=>`${x(r.date)},${y(r.upper)}`).join(' '),lower=[...fc].reverse().map(r=>`${x(r.date)},${y(r.lower)}`).join(' ');svg.appendChild(svgEl('polygon',{points:`${upper} ${lower}`,class:'range-area'}));svg.appendChild(svgEl('path',{d:pathFor(hist,r=>x(r.date),r=>y(r.net_sales)),class:'trend-line',stroke:COLORS[2026]}));const bridge=[{date:hist.at(-1).date,estimate:hist.at(-1).net_sales},...fc];svg.appendChild(svgEl('path',{d:pathFor(bridge,r=>x(r.date),r=>y(r.estimate)),class:'forecast-line'}));hist.slice(-1).forEach(r=>svg.appendChild(svgEl('circle',{cx:x(r.date),cy:y(r.net_sales),r:5,fill:COLORS[2026],class:'point'})));fc.forEach(r=>svg.appendChild(svgEl('circle',{cx:x(r.date),cy:y(r.estimate),r:3.5,fill:'#b7790b',class:'point'})));holder.appendChild(svg)}
 
-function renderBars(year) {
-  const rows = model.rankings.item_group[String(year)].slice(0, 10);
-  const max = rows[0]?.net_sales || 1;
-  $('group-chart').innerHTML = rows.map(r => `
-    <div class="bar-row">
-      <div class="bar-label">${escapeHtml(r.name)}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2, (r.net_sales/max)*100)}%"></div></div>
-      <div class="bar-value">${compact.format(r.net_sales)}</div>
-    </div>`).join('');
-}
+function renderCustomerSummary(){const m=intel.customer_model.metrics,rows=intel.customer_model.customers;$('model-auc').textContent=m.test_auc.toFixed(3);$('model-accuracy').textContent=pct.format(m.test_accuracy);$('high-risk-count').textContent=fmt.format(rows.filter(r=>r.risk==='High').length);$('revenue-risk').textContent=money(rows.reduce((s,r)=>s+r.revenue_at_risk,0));renderCustomerRows();if(!selectedCustomer&&rows.length)selectCustomer(rows[0].customer)}
+function renderCustomerRows(){const q=$('customer-search').value.trim().toLowerCase(),risk=$('risk-filter').value;const rows=intel.customer_model.customers.filter(r=>(risk==='All'||r.risk===risk)&&(!q||r.customer.toLowerCase().includes(q))).slice(0,160);$('customer-risk-rows').innerHTML=rows.map(r=>`<tr data-customer="${esc(r.customer)}" onclick="selectCustomer(this.dataset.customer)" class="${selectedCustomer===r.customer?'selected':''}"><td>${esc(r.customer)}</td><td><span class="risk-badge ${r.risk.toLowerCase()}">${r.risk}</span></td><td class="numeric">${pct.format(r.reorder_probability_60d)}</td><td class="numeric">${compact.format(r.revenue_at_risk)}</td><td class="numeric">${fmt.format(r.recency_days)} days</td></tr>`).join('')}
+function selectCustomer(name){selectedCustomer=name;const r=intel.customer_model.customers.find(x=>x.customer===name),recs=intel.recommendations[name]||[];$('customer-detail-name').textContent=name;$('customer-detail').innerHTML=`<div class="detail-metrics"><div class="detail-metric"><span>60-day reorder probability</span><strong>${pct.format(r.reorder_probability_60d)}</strong></div><div class="detail-metric"><span>Risk tier</span><strong>${r.risk}</strong></div><div class="detail-metric"><span>Last positive order</span><strong>${fmt.format(r.recency_days)} days</strong></div><div class="detail-metric"><span>Six-month net sales</span><strong>${money(r.revenue_180)}</strong></div><div class="detail-metric"><span>90-day documents</span><strong>${fmt.format(r.documents_90)}</strong></div><div class="detail-metric"><span>Product breadth</span><strong>${fmt.format(r.product_breadth_180)}</strong></div></div><div class="recommendation-list"><h3>Next-best products</h3>${recs.length?recs.map((p,i)=>`<div class="recommendation"><strong>${i+1}. ${esc(p.product)}</strong><small>${esc(p.group)} · purchased by ${fmt.format(p.peer_customers)} peer customers</small></div>`).join(''):'<p class="detail-empty">No sufficiently supported recommendation for this account.</p>'}</div>`;renderCustomerRows()}
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-}
+function renderProducts(){const growth=intel.growth.products.filter(r=>r.current_92d>500000).slice(0,15);$('product-growth').innerHTML=growth.map(r=>`<tr><td>${esc(r.name)}</td><td class="numeric">${compact.format(r.current_92d)}</td><td class="numeric">${r.change>=0?'+':''}${compact.format(r.change)}</td><td class="numeric">${r.growth===null?'new':pct.format(r.growth)}</td></tr>`).join('');const groups=[...intel.growth.groups].sort((a,b)=>Math.abs(b.change)-Math.abs(a.change)).slice(0,10).map(r=>({label:r.name,value:r.change}));renderBars('group-growth-bars',groups,true);renderEvidence();$('company-intelligence').innerHTML=intel.company_intelligence.map(r=>`<article class="company-card"><h4>${esc(r.company)}</h4><span class="evidence-level">${esc(r.evidence_level)}</span><p>${esc(r.finding)}</p><a href="${esc(r.source_url)}" target="_blank" rel="noopener">Official source ↗</a></article>`).join('')}
+function renderEvidence(){const level=$('evidence-filter').value,rows=intel.product_intelligence.filter(r=>level==='All'||r.evidence_level===level);$('product-intelligence').innerHTML=rows.map(r=>`<article class="evidence-card"><div><h4>${esc(r.product)}</h4><span class="evidence-level ${r.evidence_level.toLowerCase().replaceAll(' ','-')}">${esc(r.evidence_level)}</span></div><dl><dt>Product/category</dt><dd>${esc(r.substance_or_category)}</dd><dt>Use</dt><dd>${esc(r.use)}</dd><dt>Company</dt><dd>${esc(r.company)}</dd><dt>Kenya status</dt><dd>${esc(r.kenya_status)}</dd></dl><p>${esc(r.note)}</p><a href="${esc(r.source_url)}" target="_blank" rel="noopener">View source ↗</a></article>`).join('')}
 
-function renderTable(id, rows, total) {
-  $(id).innerHTML = rows.slice(0, 10).map((r, i) => `<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${fmt.format(r.net_sales)}</td><td>${pct.format(r.net_sales/total)}</td></tr>`).join('');
-}
+function renderAnomalies(){const a=intel.anomalies;$('movement-count').textContent=fmt.format(a.customer_movements.length);$('credit-count').textContent=fmt.format(a.credit_rates.length);$('discount-count').textContent=fmt.format(a.discount_lines.length);$('movement-rows').innerHTML=a.customer_movements.map(r=>`<tr><td>${esc(r.customer)}</td><td><span class="risk-badge ${r.direction==='Drop'?'high':'low'}">${r.direction}</span></td><td class="numeric">${compact.format(r.august_sales)}</td><td class="numeric">${compact.format(r.baseline_median)}</td><td class="numeric">${r.robust_z.toFixed(1)}</td></tr>`).join('');$('credit-rows').innerHTML=a.credit_rates.slice(0,20).map(r=>`<tr><td>${esc(r.customer)}</td><td class="numeric">${compact.format(r.invoice_sales)}</td><td class="numeric">${compact.format(r.credit_value)}</td><td class="numeric">${pct.format(r.credit_rate)}</td></tr>`).join('');$('discount-rows').innerHTML=a.discount_lines.map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.customer)}</td><td>${esc(r.product)}</td><td class="numeric">${fmt.format(r.net_sales)}</td><td class="numeric">${fmt.format(r.gross_sales)}</td><td class="numeric">${pct.format(r.discount_rate)}</td></tr>`).join('')}
 
-function renderYear(year) {
-  renderKpis(year);
-  renderBars(year);
-  const total = model.year_totals[String(year)].net_sales;
-  renderTable('customer-rows', model.rankings.customer[String(year)], total);
-  renderTable('product-rows', model.rankings.product[String(year)], total);
-}
+function renderMethods(){const m=intel.methodology;$('method-commercial').textContent=m.commercial_rules;$('method-forecast').textContent=m.forecast;$('method-customer').textContent=m.customer_model;$('method-recommendations').textContent=m.recommendations;$('method-anomalies').textContent=m.anomalies;$('source-rows').innerHTML=intel.coverage.map(r=>`<tr><td>${esc(r.file)}</td><td>${r.start}</td><td>${r.end}</td><td class="numeric">${fmt.format(r.commercial_rows)}</td></tr>`).join('');$('generated-at').textContent=`Model generated ${new Date(intel.generated_at).toLocaleString()}`}
 
-async function init() {
-  const response = await fetch('dashboard-data.json');
-  if (!response.ok) throw new Error('Dashboard data could not be loaded.');
-  model = await response.json();
-  renderTrend();
-  renderYear(Number($('year-select').value));
-  $('year-select').addEventListener('change', event => renderYear(Number(event.target.value)));
-  let resizeTimer;
-  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderTrend, 140); });
-}
+function assistantAnswer(question){const q=question.toLowerCase();const f=intel.forecast;if(q.includes('forecast')||q.includes('next 12')||q.includes('next year'))return `The selected ${f.selected_method} model forecasts ${money(f.next_12_months)} for Sep 2026–Aug 2027 and ${money(f.next_3_months)} for Sep–Nov 2026. Its recent rolling back-test MAPE was ${pct.format(f.backtest_mape)}.`;if(q.includes('credit')||q.includes('return'))return `The review rule found ${intel.anomalies.credit_rates.length} customers with a six-month credit-note rate of at least 5% and at least KES 1M in invoiced sales. The highest are ${intel.anomalies.credit_rates.slice(0,5).map(r=>`${r.customer} (${pct.format(r.credit_rate)})`).join(', ')}.`;if(q.includes('discount'))return `There are ${intel.anomalies.discount_lines.length} large line-level discount exceptions under the published rule. Open the Anomalies tab to review the dates, customers, products and gross-to-net rates.`;if(q.includes('risk')||q.includes('churn')){const rows=intel.customer_model.customers.slice(0,5);return `The largest model-weighted revenue-at-risk accounts are ${rows.map(r=>`${r.customer} (${money(r.revenue_at_risk)}, ${pct.format(r.reorder_probability_60d)} reorder probability)`).join('; ')}.`}const customer=intel.customer_model.customers.find(r=>q.includes(r.customer.toLowerCase()));if(customer){const recs=intel.recommendations[customer.customer]||[];return `${customer.customer} has a ${pct.format(customer.reorder_probability_60d)} estimated 60-day reorder probability, ${fmt.format(customer.recency_days)} days since its last positive order, and ${money(customer.revenue_at_risk)} model-weighted revenue at risk.${recs.length?` Suggested products: ${recs.map(r=>r.product).join(', ')}.`:' No supported next-best-product result was available.'}`}const product=intel.product_intelligence.find(r=>q.includes(r.product.toLowerCase().replace(/\s+/g,' '))||q.includes(r.product.split(' ')[0].toLowerCase()));if(product)return `${product.product}: ${product.substance_or_category}; ${product.use}. Evidence level: ${product.evidence_level}. Kenya status: ${product.kenya_status}. ${product.note}`;if(q.includes('growth')||q.includes('growing')){const rows=intel.growth.products.filter(r=>r.current_92d>500000).slice(0,5);return `The largest 92-day product increases are ${rows.map(r=>`${r.name} (${r.change>=0?'+':''}${money(r.change)})`).join(', ')}. Growth compares the latest 92 days with the preceding 92 days.`}if(q.includes('recommend')||q.includes('sell'))return 'Include a customer name in the question, for example: “What should I sell to CASH SALE?” The result uses peer co-purchase patterns and is a commercial lead, not clinical advice.';return 'I can answer questions about the sales forecast, customer reorder risk, next-best products, product growth, credit notes, discount exceptions, and the published Kenya product evidence. Try including a customer or product name.'}
+function ask(question){if(!question.trim())return;const thread=$('assistant-thread');thread.insertAdjacentHTML('beforeend',`<div class="message user"><p>${esc(question)}</p></div>`);thread.insertAdjacentHTML('beforeend',`<div class="message assistant"><strong>Sales assistant</strong><p>${esc(assistantAnswer(question))}</p></div>`);thread.scrollTop=thread.scrollHeight}
 
-init().catch(error => {
-  document.querySelector('main').innerHTML = `<section class="panel" style="padding:24px"><h1>Dashboard unavailable</h1><p>${escapeHtml(error.message)}</p></section>`;
-});
+function activateTab(id){currentTab=id;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.tab-panel').forEach(p=>{const on=p.id===id;p.classList.toggle('active',on);p.hidden=!on});if(id==='overview')renderOverview(Number($('year-select').value));if(id==='forecast')renderForecast();if(id==='products')renderProducts()}
+function bind(){document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.tab)));$('year-select').addEventListener('change',e=>renderOverview(Number(e.target.value)));$('customer-search').addEventListener('input',renderCustomerRows);$('risk-filter').addEventListener('change',renderCustomerRows);$('evidence-filter').addEventListener('change',renderEvidence);$('assistant-form').addEventListener('submit',e=>{e.preventDefault();ask($('assistant-input').value);$('assistant-input').value=''});document.querySelectorAll('.prompt').forEach(b=>b.addEventListener('click',()=>ask(b.textContent)));let timer;window.addEventListener('resize',()=>{clearTimeout(timer);timer=setTimeout(()=>{if(currentTab==='overview')renderOverviewTrend();if(currentTab==='forecast')renderForecastChart()},150)})}
+
+async function start(){base=await fetch('dashboard-data.json').then(r=>{if(!r.ok)throw new Error('Dashboard data failed to load');return r.json()});intel=window.SALES_INTELLIGENCE;if(!intel)throw new Error('Intelligence data failed to load');bind();renderOverview(2026);renderForecast();renderCustomerSummary();renderProducts();renderAnomalies();renderMethods()}
+start().catch(error=>{document.querySelector('.shell').innerHTML=`<div class="panel method-card"><h2>Dashboard could not load</h2><p>${esc(error.message)}</p></div>`;console.error(error)});
