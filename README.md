@@ -8,6 +8,7 @@ Live site: https://nilkamal11.github.io/sales-performance-dashboard/
 
 - Yearly and monthly performance with normalized credit notes
 - Twelve-month sales forecast with rolling back-test results and empirical ranges
+- Top-product monthly forecast chart with actual history, 3/5/8-product views, and 12-month SKU planning estimates
 - Customer 60-day reorder probabilities and revenue-at-risk ranking
 - Credit-cycle exposure scenarios from 30 to 180 days, explicitly separated from actual accounts-receivable aging
 - Next-best-product suggestions from peer co-purchase patterns

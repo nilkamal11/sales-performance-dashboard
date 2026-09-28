@@ -60,9 +60,17 @@
         <article class="kpi warm"><span>Selected model</span><strong id="forecast-method" class="smaller"></strong><small>Lowest recent error</small></article>
       </div>
       <article class="panel"><div class="panel-head"><div><p class="section-label">Observed and projected</p><h3>Monthly net sales with 90% empirical range</h3></div><div class="legend"><span><i class="actual"></i>Actual</span><span><i class="estimate"></i>Forecast</span><span><i class="range"></i>Range</span></div></div><div id="forecast-chart" class="chart forecast-chart"></div></article>
+      <article class="panel product-forecast-panel">
+        <div class="panel-head product-forecast-head">
+          <div><p class="section-label">Product breakdown</p><div class="title-with-info"><h3>Monthly forecast for top products</h3><span class="info-wrap"><button class="info-button" type="button" aria-label="Explain the top-product forecast">i</button><span class="info-tooltip wide-tooltip" role="tooltip">Products are ranked by 2026 year-to-date net sales. Solid lines are recorded monthly sales from January 2025 through August 2026; dashed lines are planning estimates from September 2026 through August 2027. Each product estimate starts from its latest three-month run rate and applies a damped version of its recent six-month trend. These product estimates are directional and do not have the aggregate forecast's back-tested uncertainty range.</span></span></div><p class="section-note">Solid lines are actual sales; dashed lines are product-level planning estimates.</p></div>
+          <label class="select-label" for="product-forecast-count">Show<select id="product-forecast-count"><option value="3">Top 3</option><option value="5" selected>Top 5</option><option value="8">Top 8</option></select></label>
+        </div>
+        <div id="product-forecast-legend" class="legend product-legend" aria-label="Products shown"></div>
+        <div id="product-forecast-chart" class="chart product-forecast-chart"></div>
+      </article>
       <div class="grid two">
         <article class="panel"><div class="panel-head"><div><p class="section-label">Model selection</p><h3>Rolling back-test results</h3></div></div><div class="table-wrap"><table><thead><tr><th>Rank</th><th>Candidate model</th><th class="numeric">MAPE</th></tr></thead><tbody id="model-comparison"></tbody></table></div></article>
-        <article class="panel"><div class="panel-head"><div><p class="section-label">SKU planning</p><h3>Top product outlook</h3></div></div><div class="table-wrap compact-table"><table><thead><tr><th>Product</th><th class="numeric">2026 YTD</th><th class="numeric">Sep–Nov forecast</th></tr></thead><tbody id="product-forecast"></tbody></table></div></article>
+        <article class="panel"><div class="panel-head"><div><p class="section-label">SKU planning</p><h3>Top product outlook</h3></div></div><div class="table-wrap compact-table"><table><thead><tr><th>Product</th><th class="numeric">2026 YTD</th><th class="numeric">Sep–Nov</th><th class="numeric">Next 12 months</th></tr></thead><tbody id="product-forecast"></tbody></table></div></article>
       </div>
     </section>
 
