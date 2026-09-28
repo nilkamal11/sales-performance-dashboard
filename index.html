@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive commercial sales dashboard covering April 2024 through August 2026.">
+  <title>Sales Performance</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317324D'/%3E%3Cpath d='M15 46V34h8v12zm13 0V25h8v21zm13 0V15h8v31z' fill='%232F75B5'/%3E%3Cpath d='M12 49h40' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Commercial sales</p>
+        <h1>Sales performance</h1>
+        <p class="scope">12 Apr 2024–31 Aug 2026 · Credit notes included · Samples excluded</p>
+      </div>
+      <div class="controls">
+        <label for="year-select">Reporting year</label>
+        <select id="year-select" aria-label="Reporting year">
+          <option value="2026" selected>2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+        <p id="coverage" class="coverage"></p>
+      </div>
+    </header>
+
+    <section class="kpis" aria-label="Key performance indicators">
+      <article class="kpi primary"><span>Net sales</span><strong id="net-sales"></strong><small>Source currency</small></article>
+      <article class="kpi positive"><span>Comparable YoY</span><strong id="yoy"></strong><small id="yoy-note">Same months</small></article>
+      <article class="kpi"><span>Commercial documents</span><strong id="documents"></strong><small>Sales and credit notes</small></article>
+      <article class="kpi"><span>Active customers</span><strong id="customers"></strong><small>Distinct customer names</small></article>
+      <article class="kpi warm"><span>Average net / document</span><strong id="average"></strong><small>Net sales ÷ documents</small></article>
+      <article class="kpi warm"><span>Discount rate</span><strong id="discount"></strong><small>Gross-to-net reduction</small></article>
+    </section>
+
+    <section class="visual-grid">
+      <article class="panel trend-panel">
+        <div class="panel-heading">
+          <div><p class="section-label">Monthly trend</p><h2>Net sales by year</h2></div>
+          <div id="legend" class="legend" aria-label="Chart legend"></div>
+        </div>
+        <div id="trend-chart" class="chart" role="img" aria-label="Monthly net sales trend by year"></div>
+      </article>
+
+      <article class="panel group-panel">
+        <div class="panel-heading">
+          <div><p class="section-label">Mix</p><h2>Top item groups</h2></div>
+          <span id="group-year" class="year-pill"></span>
+        </div>
+        <div id="group-chart" class="bar-chart" role="img" aria-label="Top item groups by net sales"></div>
+      </article>
+    </section>
+
+    <section class="table-grid">
+      <article class="panel table-panel">
+        <div class="panel-heading"><div><p class="section-label">Customers</p><h2>Top accounts</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Rank</th><th>Customer</th><th>Net sales</th><th>Share</th></tr></thead><tbody id="customer-rows"></tbody></table></div>
+      </article>
+      <article class="panel table-panel">
+        <div class="panel-heading"><div><p class="section-label">Products</p><h2>Top products</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Rank</th><th>Product</th><th>Net sales</th><th>Share</th></tr></thead><tbody id="product-rows"></tbody></table></div>
+      </article>
+    </section>
+
+    <aside class="methodology">
+      <details>
+        <summary>Coverage and calculation notes</summary>
+        <div class="note-grid">
+          <p><strong>2024 coverage:</strong> begins 12 Apr, so it is not a full calendar year.</p>
+          <p><strong>Credit notes:</strong> 2024 positive credit-note values are normalized as negative returns; later credit-note vouchers are already negative.</p>
+          <p><strong>Comparable YoY:</strong> shown only when the prior year contains every month in the selected period.</p>
+          <p><strong>Branch data:</strong> most commercial rows have no branch value, so branch rankings are not emphasized.</p>
+        </div>
+      </details>
+    </aside>
+
+    <footer>Prepared from the supplied 2024, 2025, Jan–Jul 2026, and Aug 2026 sales extracts.</footer>
+  </main>
+  <script src="app.js" defer></script>
+</body>
+</html>
