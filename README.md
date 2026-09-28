@@ -9,6 +9,7 @@ Live site: https://nilkamal11.github.io/sales-performance-dashboard/
 - Yearly and monthly performance with normalized credit notes
 - Twelve-month sales forecast with rolling back-test results and empirical ranges
 - Customer 60-day reorder probabilities and revenue-at-risk ranking
+- Credit-cycle exposure scenarios from 30 to 180 days, explicitly separated from actual accounts-receivable aging
 - Next-best-product suggestions from peer co-purchase patterns
 - Product and company research with evidence-level labels and source links
 - Customer movement, credit-note-rate, and discount exception queues
@@ -22,5 +23,6 @@ Live site: https://nilkamal11.github.io/sales-performance-dashboard/
 - Anomaly flags are review signals, not proof of error, misconduct, or fraud.
 - Currency is labelled KES from the Kenya business context; the source files do not contain an explicit currency field.
 - Customer-level outputs are intentionally public in this repository. The original Excel workbooks are not included.
+- The source files do not contain payment dates, receipt allocations, due dates, open balances, or agreed credit terms. Credit-cycle figures are invoice-date scenarios and must not be read as actual DSO or outstanding receivables.
 
 The site is static HTML, CSS, JavaScript, and precomputed JSON-compatible data. No source data is sent to an external AI service by the on-page assistant.
