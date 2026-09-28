@@ -6,7 +6,7 @@ const pct=new Intl.NumberFormat('en-KE',{style:'percent',maximumFractionDigits:1
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const money=value=>`KES ${compact.format(value||0)}`;
-let base,intel,selectedCustomer=null,currentTab='overview';
+let base,intel,selectedCustomer=null,selectedCreditCustomer=null,currentTab='overview';
 
 const KPI_HELP={
   'Net sales':'Sales and Invoice amounts for the selected year, less credit notes normalized as negative. Samples and unknown voucher types are excluded. The source files do not state a currency; KES is used from the Kenya business context.',
@@ -111,7 +111,20 @@ function renderCreditCycle(){
   const c=intel.credit_cycle,days=Number($('cycle-select').value),rate=Math.max(0,Number($('funding-rate').value)||0)/100,scenario=c.scenarios.find(r=>r.days===days),rows=c.customer_by_cycle[String(days)]||[];
   $('cycle-exposure').textContent=money(scenario.exposure);$('cycle-exposure-note').textContent=`Net sales dated within the latest ${days} days`;$('cycle-incremental').textContent=money(scenario.incremental_vs_30);$('cycle-funding-cost').textContent=money(scenario.exposure*rate);$('cycle-rate-note').textContent=`Scenario exposure × ${pct.format(rate)} annual rate`;$('cash-labelled-sales').textContent=money(c.cash_labelled_sales_2026);$('credit-customer-title').textContent=`Top customers under a ${days}-day scenario`;
   renderBars('credit-scenario-bars',c.scenarios.map(r=>({label:`${r.days} days`,value:r.exposure})),false);renderBars('credit-age-bars',c.age_buckets_180.map(r=>({label:`${r.bucket} days`,value:r.exposure})),false);
-  $('credit-customer-rows').innerHTML=rows.slice(0,30).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.customer)}</td><td class="numeric">${compact.format(r.exposure)}</td><td class="numeric">${pct.format(r.exposure/scenario.exposure)}</td><td class="numeric">${fmt.format(r.documents)}</td><td>${esc(r.last_invoice_date)}</td></tr>`).join('');
+  const visible=rows.slice(0,30);
+  if(!visible.some(r=>r.customer===selectedCreditCustomer))selectedCreditCustomer=visible[0]?.customer||null;
+  $('credit-customer-rows').innerHTML=visible.map((r,i)=>`<tr data-customer="${esc(r.customer)}" onclick="selectCreditCustomer(this.dataset.customer)" class="${selectedCreditCustomer===r.customer?'selected':''}"><td>${i+1}</td><td>${esc(r.customer)}</td><td class="numeric">${compact.format(r.exposure)}</td><td class="numeric">${pct.format(r.exposure/scenario.exposure)}</td><td class="numeric">${fmt.format(r.documents)}</td><td>${esc(r.last_invoice_date)}</td></tr>`).join('');
+  if(selectedCreditCustomer)selectCreditCustomer(selectedCreditCustomer);
+}
+
+function selectCreditCustomer(name){
+  selectedCreditCustomer=name;
+  const days=Number($('cycle-select').value),all=intel.credit_cycle.document_details?.[name]||[],docs=all.filter(r=>r.age_days<days),net=docs.reduce((sum,r)=>sum+r.net_sales,0),positive=docs.reduce((sum,r)=>sum+Math.max(0,r.net_sales),0),credits=-docs.reduce((sum,r)=>sum+Math.min(0,r.net_sales),0),scenarioRow=(intel.credit_cycle.customer_by_cycle[String(days)]||[]).find(r=>r.customer===name),difference=net-(scenarioRow?.exposure||net);
+  $('credit-detail-title').textContent=`${name} · ${days}-day source detail`;
+  $('credit-detail-note').textContent=`${fmt.format(docs.length)} contributing documents from ${docs.length?docs[docs.length-1].date:'—'} to ${docs.length?docs[0].date:'—'}. Detail total ${money(net)} ${Math.abs(difference)<0.01?'matches the displayed customer exposure exactly.':`differs by ${money(difference)}; review the source grouping.`}`;
+  $('credit-detail-exposure').textContent=money(net);$('credit-detail-documents').textContent=fmt.format(docs.length);$('credit-detail-positive').textContent=money(positive);$('credit-detail-credits').textContent=money(credits);
+  $('credit-detail-rows').innerHTML=docs.length?docs.map(r=>`<tr class="${r.net_sales<0?'credit-note-row':''}"><td>${esc(r.date)}</td><td class="numeric">${fmt.format(r.age_days)} days</td><td>${esc(r.voucher)}</td><td>${esc(r.voucher_number)}</td><td class="product-list-cell"><strong>${esc(r.product_codes)}</strong><small>${esc(r.products)}</small></td><td class="numeric">${fmt.format(r.line_count)}</td><td class="numeric">${fmt.format(r.net_sales)}</td><td class="numeric">${fmt.format(r.gross_sales)}</td><td class="numeric">${fmt.format(r.billed_qty)}</td><td class="numeric">${fmt.format(r.bonus_qty)}</td><td class="source-file-cell">${esc(r.source_file)}</td></tr>`).join(''):'<tr><td colspan="11" class="detail-empty">No contributing documents for this customer and cycle.</td></tr>';
+  document.querySelectorAll('#credit-customer-rows tr').forEach(row=>row.classList.toggle('selected',row.dataset.customer===name));
 }
 
 function renderProducts(){const growth=intel.growth.products.filter(r=>r.current_92d>500000).slice(0,15);$('product-growth').innerHTML=growth.map(r=>`<tr><td>${esc(r.name)}</td><td class="numeric">${compact.format(r.current_92d)}</td><td class="numeric">${r.change>=0?'+':''}${compact.format(r.change)}</td><td class="numeric">${r.growth===null?'new':pct.format(r.growth)}</td></tr>`).join('');const groups=[...intel.growth.groups].sort((a,b)=>Math.abs(b.change)-Math.abs(a.change)).slice(0,10).map(r=>({label:r.name,value:r.change}));renderBars('group-growth-bars',groups,true);renderEvidence();$('company-intelligence').innerHTML=intel.company_intelligence.map(r=>`<article class="company-card"><h4>${esc(r.company)}</h4><span class="evidence-level">${esc(r.evidence_level)}</span><p>${esc(r.finding)}</p><a href="${esc(r.source_url)}" target="_blank" rel="noopener">Official source ↗</a></article>`).join('')}
