@@ -6,7 +6,7 @@
   <meta name="description" content="Kenya commercial sales dashboard with forecasts, customer intelligence, product evidence and anomaly monitoring.">
   <title>Sales Intelligence</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317324D'/%3E%3Cpath d='M15 46V34h8v12zm13 0V25h8v21zm13 0V15h8v31z' fill='%232F75B5'/%3E%3Cpath d='M12 49h40' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260928-credit-detail">
+  <link rel="stylesheet" href="styles.css?v=20261006-product-names">
 </head>
 <body>
   <header class="site-header">
@@ -112,7 +112,7 @@
     <section id="products" class="tab-panel" hidden>
       <div class="section-head"><div><p class="section-label">Market context</p><div class="title-with-info"><h2>Product and company intelligence</h2><span class="info-wrap"><button class="info-button" type="button" aria-label="Explain the product intelligence page">i</button><span class="info-tooltip" role="tooltip">Product growth compares the latest 92 days with the preceding 92 days. Evidence labels distinguish Kenya regulatory documents from official global or regional sources and unresolved brand matches. A product's presence in sales data or an external catalogue does not by itself prove current Kenya registration.</span></span></div><p class="section-note">Regulatory evidence and official sources are separated from regional references and unresolved brand matches.</p></div></div>
       <div class="grid two">
-        <article class="panel"><div class="panel-head"><div><p class="section-label">Growth</p><h3>Fastest-growing products</h3></div></div><div class="table-wrap"><table><thead><tr><th>Product code</th><th class="numeric">Last 92 days</th><th class="numeric">Change</th><th class="numeric">Growth</th></tr></thead><tbody id="product-growth"></tbody></table></div></article>
+        <article class="panel"><div class="panel-head product-growth-head"><div><p class="section-label">Growth</p><h3>Fastest-growing products</h3><p class="section-note">Largest net-sales increases: 1 Jun–31 Aug 2026 compared with 1 Mar–31 May 2026.</p></div></div><div class="table-wrap"><table><thead><tr><th>Product</th><th class="numeric">Net sales<br>Jun–Aug</th><th class="numeric">Change<br>vs Mar–May</th><th class="numeric">Growth<br>vs Mar–May</th></tr></thead><tbody id="product-growth"></tbody></table></div></article>
         <article class="panel"><div class="panel-head"><div><p class="section-label">Portfolio</p><h3>Item-group momentum</h3></div></div><div id="group-growth-bars" class="bar-chart"></div></article>
       </div>
       <article class="panel intelligence-panel"><div class="panel-head"><div><p class="section-label">Kenya evidence</p><h3>Product matches and verification status</h3></div><select id="evidence-filter" onchange="renderEvidence()"><option value="All">All evidence levels</option><option value="Kenya regulatory">Kenya regulatory</option><option value="Official global">Official global</option><option value="Official regional">Official regional</option><option value="Unverified">Unverified</option></select></div><div id="product-intelligence" class="evidence-grid"></div></article>
@@ -157,7 +157,7 @@
   </main>
 
   <footer><span>Public dashboard · Customer-level model output included</span><span id="generated-at"></span></footer>
-  <script src="intelligence-data.js?v=20260928-credit-detail"></script>
-  <script src="app.js?v=20260928-credit-detail"></script>
+  <script src="intelligence-data.js?v=20261006-product-names"></script>
+  <script src="app.js?v=20261006-product-names"></script>
 </body>
 </html>
